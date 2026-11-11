@@ -13,6 +13,8 @@ Coursework for the **Speech Recognition (AISPR)** module.
 ![TensorFlow 2.10](https://img.shields.io/badge/TensorFlow-2.10-FF6F00?logo=tensorflow&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
+![The EduAudio dashboard, with the model loaded and ready](docs/images/web-app.png)
+
 ---
 
 ## Contents
@@ -32,13 +34,12 @@ Coursework for the **Speech Recognition (AISPR)** module.
 
 ## What it does
 
-Press record, make an animal noise (or play one of the reference sounds), and the page
-names the animal.
+Press **Hold & Speak**, make an animal noise (or play one of the reference sounds from the
+library at the bottom), and the page names the animal with a confidence bar.
 
 Under the hood the page converts the microphone stream into MFCCs in real time with
 [Meyda](https://meyda.js.org/), feeds a 130 × 39 image of the sound into a small CNN running
-through [TensorFlow.js](https://www.tensorflow.org/js), and shows the top prediction with a
-confidence bar.
+through [TensorFlow.js](https://www.tensorflow.org/js), and shows the top prediction.
 
 ```mermaid
 flowchart LR
@@ -58,27 +59,30 @@ z-scoring per clip are all chosen so that a browser frame looks like a training 
 
 ## Results
 
-> ⚠️ **Read the caveat first.** The 100 % below is *not* a measure of how well this
-> generalises to new recordings — the augmentation step runs before the train/test split, so
-> variants of the same clip end up on both sides. See [Limitations](#limitations) for the
-> explanation and the fix.
-
 | Metric | Value |
 |---|---|
-| Test samples | 216 |
-| Accuracy | **1.00** |
-| Macro F1 | 1.00 |
-| Training epochs | 200 (no early stop) |
-| Final validation loss | 0.126 |
-
-Every class scores 1.00 precision and recall in the classification report, and the confusion
-matrix is perfectly diagonal:
+| Test set | **72 clips** — 72 unseen recordings, one per source clip |
+| Accuracy | **0.88** (63 of 72) |
+| Macro F1 | 0.87 |
+| Weighted F1 | 0.87 |
+| Training | 130 epochs, stopped by early stopping |
+| Validation accuracy (last epoch) | 0.85 |
 
 ![Confusion matrix](docs/images/confusion-matrix.png)
 
-Training and validation both saturate within about 50 epochs:
+Nine of the 72 test clips are misclassified. **Dog** is the hardest class (F1 0.67): four of
+its eight clips are spread across cow, hen, pig and rooster. Cat, frog, hen and sheep are the
+strongest classes (F1 0.94), with cow close behind.
 
 ![Training curves](docs/images/training-curves.png)
+
+Training accuracy climbs to about 0.98 while validation plateaus near 0.85 — a 13-point gap
+that is the clearest sign of how little data there is.
+
+> **On the split.** Clips are split into training and validation *before* any augmentation,
+> so no recording appears on both sides. An earlier version of this notebook augmented
+> first and split afterwards, which put near-copies of validation clips into the training set
+> and produced a meaningless 100 %. The figures above come from the corrected pipeline.
 
 ### What the model "sees"
 
@@ -110,25 +114,34 @@ licence and attribution are in [`eduaudio/dataset/README.md`](eduaudio/dataset/R
 
 ## Method
 
-### 1. Features
+### 1. Split first, then augment
+
+```python
+train_df, val_df = train_test_split(
+    subset, test_size=0.2, random_state=7204, stratify=subset['category']
+)
+# 288 training clips · 72 validation clips
+```
+
+Splitting on **clips** rather than on samples is what makes the score meaningful: a
+noise-added or time-shifted copy of a validation clip is still the same recording, so it
+must not appear in training. Only the training clips are then expanded, threefold, to
+**864 samples**; the 72 validation clips are evaluated as clean originals.
+`np.random.seed(7204)` makes the augmentation reproducible run to run.
+
+### 2. Features
 
 Each clip is loaded at 22.05 kHz for 2.9 s and converted to 40 MFCCs using
 `n_fft=512`, `hop_length=512`, `lifter=0`. The 0th coefficient carries loudness rather than
 timbre, so it is dropped, leaving **39 features**. The clip is then z-scored and padded or
 trimmed to exactly **130 time frames** — so one sample is a `130 × 39 × 1` array.
 
-### 2. Augmentation
+### 3. Augmentation (training clips only)
 
-Each of the 360 clips is expanded into three samples:
-
-- the original,
 - **noise** — Gaussian noise at 0.4 % of the clip's peak,
 - **time shift** — the waveform rolled by up to ±30 % of its length.
 
-That gives **1,080 samples**, split 80/20 into **864 train / 216 test**
-(`random_state=7204`).
-
-### 3. Network
+### 4. Network
 
 A small 2-D CNN, deliberately regularised for a tiny dataset:
 
@@ -141,12 +154,13 @@ A small 2-D CNN, deliberately regularised for a tiny dataset:
 
 All convolutions use `l2(0.01)`. Trained with Adam, batch size 32, up to 200 epochs, with
 `ReduceLROnPlateau` (factor 0.2, patience 5) and `EarlyStopping` (patience 15,
-`restore_best_weights`).
+`restore_best_weights`). Early stopping fired at **epoch 130**, which is exactly what should
+happen once the validation set contains genuinely unseen recordings.
 
 GlobalAveragePooling is what makes the model shift-tolerant: it averages over time, so a
 sound happening at 0.5 s or 2 s produces the same features.
 
-### 4. Export
+### 5. Export
 
 `TFLiteConverter.from_keras_model` writes `web_app/model.tflite` (439 KB), which the page
 loads with `@tensorflow/tfjs-tflite`.
@@ -171,7 +185,7 @@ loads with `@tensorflow/tfjs-tflite`.
 │       ├── style.css
 │       ├── model.tflite            # trained model (439 KB)
 │       └── assets/                 # one reference WAV per animal
-├── docs/images/                    # figures exported from the notebook
+├── docs/images/                    # figures exported from the notebook + app screenshot
 ├── LICENSE
 └── README.md
 ```
@@ -207,8 +221,9 @@ jupyter lab eduaudio/eduaudio_model.ipynb
 
 Run the cells from top to bottom. The last cell overwrites `web_app/model.tflite`.
 
-The reference run — 200 epochs at roughly 14 s each, so about 45 minutes — used
-Python 3.9.25, TensorFlow 2.10.0 and a CUDA GPU.
+The reference run used Python 3.9.25, TensorFlow 2.10.0 and a CUDA GPU (GTX 1660 Ti). The
+first epoch takes ~17 s while CUDA warms up, then ~1 s per epoch; the whole run, including
+feature extraction for 1,080 samples, takes roughly 5–10 minutes.
 
 ---
 
@@ -228,36 +243,27 @@ cat, cow, crow, dog, frog, hen, pig, rooster, sheep
 
 ## Limitations
 
-**1. The test score is inflated by a split-order mistake.** This is the important one.
+**1. The test set is tiny.** 72 clips means each misclassification moves accuracy by 1.4
+percentage points, and a single class is judged on 8 examples. Treat 0.88 as *"somewhere
+around 85–90 %"*, not a precise figure.
 
-The notebook creates all three augmented variants first and only then calls
-`train_test_split` on the 1,080 samples. Variants of the *same* recording therefore land on
-both sides of the split: the probability that all three variants of a clip stay together is
-`0.8³ + 0.2³ = 52 %`, so roughly **48 % of the clips have a near-copy in the test set**. The
-model recognises them rather than generalising, which is why accuracy is exactly 1.00.
+**2. There is more data than 288 recordings suggests.** The training set counts 864 samples,
+but they come from only 288 distinct clips — the effective sample size is the clip count, and
+that is small for nine classes.
 
-The fix is to split by source clip and augment only the training portion:
+**3. It overfits.** Training accuracy reaches ~0.98 against ~0.85 validation. More real
+recordings, stronger augmentation, or a smaller network would all help.
 
-```python
-train_df, test_df = train_test_split(subset, test_size=0.2, stratify=subset['category'])
-# augment train_df, leave test_df untouched
-```
-
-The reported figures are what the submitted notebook produced and are left unchanged here.
-
-**2. The dataset is small.** 40 clips per animal, from one curated collection, recorded
-indoors on consumer devices. Real-world cat noises are shorter, quieter and much noisier.
-
-**3. Training was not stopped early.** The model ran the full 200 epochs and never triggered
-`EarlyStopping`; the final validation loss of 0.126 suggests it is fitting training noise
-rather than converging.
-
-**4. Browser and Python features are only approximately equal.** Meyda and librosa implement
+**4. Browser and Python features only approximately agree.** Meyda and librosa implement
 MFCC slightly differently (windowing, mel filter banks, DCT scaling). The two were tuned by
-hand to agree; small differences remain and will cost some accuracy on real recordings.
+hand to agree; small differences remain and will cost accuracy on real recordings.
 
 **5. Nine animals, nothing else.** Anything that is not one of those nine will still be
 assigned to the nearest class with high confidence — there is no "unknown" threshold.
+
+**6. Recording conditions are kind.** ESC-50 clips were selected to contain a single salient
+sound. A phone held across a room with a TV on is a much harder problem than this dataset
+represents.
 
 ---
 
