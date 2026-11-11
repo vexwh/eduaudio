@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Character encoding for text and viewport settings for mobile-friendly scaling -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduAudio Dashboard 🐾</title>
+
+    <!-- --- AI & AUDIO ENGINE LIBRARIES --- -->
+    <!-- TensorFlow.js: The main engine for running AI in the web browser -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <!-- WebGL Backend: Helps the AI run faster by using the computer's GPU -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <!-- TFLite: Specifically allows us to load the lightweight model we trained in Python -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite/dist/tf-tflite.min.js"></script>
+    <!-- Meyda: An audio library used to extract "MFCC" features (sound textures) for the AI -->
+    <script src="https://unpkg.com/meyda/dist/web/meyda.min.js"></script>
+
+    <!-- --- DESIGN ASSETS --- -->
+    <!-- FontAwesome: Provides icons (Microphone, Play button, Headset, etc.) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts: Loads the "Fredoka" font for a bubbly, kid-friendly look -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS: Link to the external file that handles colors and layout -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- VISUAL DECORATION: These circles float in the background to look like bubbles -->
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+
+    <!-- MAIN WRAPPER: Limits the dashboard width and centers it on the screen -->
+    <div class="site-wrapper">
+
+        <!-- HEADER: Contains the app title and the AI loading status badge -->
+        <header class="main-header">
+            <h1>🐱 EduAudio 🐸</h1>
+            <!-- Status Badge: Shows "Ready" when the model is loaded into memory -->
+            <div id="status_pill" class="badge loading">
+                <i class="fas fa-circle-notch fa-spin"></i> Waking up AI...
+            </div>
+        </header>
+
+        <!-- DASHBOARD GRID: Divides the screen into two main columns and a bottom row -->
+        <main class="dashboard-grid">
+
+            <!-- LEFT PANEL: Sound Input Section -->
+            <section class="card input-card">
+                <h2>Who is making that sound?</h2>
+
+                <!-- Visualizer: The canvas where we draw real-time green audio bars -->
+                <div class="viz-wrapper">
+                    <canvas id="visualizer" width="500" height="100"></canvas>
+                </div>
+
+                <div class="controls">
+                    <!-- Mic Button: Big orange button to capture live microphone input -->
+                    <button id="recordBtn" class="big-btn mic-btn" disabled>
+                        <i class="fas fa-microphone-alt"></i>
+                        <span>Hold & Speak</span>
+                    </button>
+
+                    <!-- Divider: Separates the Microphone and File Upload options -->
+                    <div class="divider"><span>OR</span></div>
+
+                    <!-- Upload Button: Styled label that triggers the hidden file input -->
+                    <label for="fileInput" class="action-btn file-btn">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload File
+                    </label>
+                    <input type="file" id="fileInput" accept="audio/*" hidden>
+                </div>
+
+                <!-- Media Player: Standard player bar used to listen back to uploaded files -->
+                <audio id="player" controls></audio>
+            </section>
+
+            <!-- RIGHT PANEL: AI Brain Section (Result Display) -->
+            <section class="card analysis-card">
+
+                <!-- Placeholder: Initial message shown before any audio is analyzed -->
+                <div id="placeholder_msg" class="placeholder-msg">
+                    <i class="fas fa-headset"></i>
+                    <p>I am waiting to hear a sound...</p>
+                </div>
+
+                <!-- Reveal Content: This part is hidden until the AI finds an animal -->
+                <div id="result_card" class="reveal-content hidden">
+                    <h3>I heard a...</h3>
+                    <!-- predictionText: Where the AI displays the final answer -->
+                    <div id="predictionText" class="animal-reveal">---</div>
+
+                    <!-- Confidence Bar: Shows a progress bar representing certainty percentage -->
+                    <div class="confidence-wrapper">
+                        <span>Certainty:</span>
+                        <div class="progress-bar">
+                            <div id="confidence_fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- FEEDBACK BOX: A loop that allows users to confirm or correct the AI -->
+                    <div id="feedback_section" class="feedback-box">
+                        <p>Did I guess right? 🤔</p>
+                        <div class="buttons-row">
+                            <!-- Yes Button: Confirms the AI was correct -->
+                            <button class="icon-btn yes" onclick="sendFeedback(true)">👍 Yes!</button>
+                            <!-- No Button: Opens the correction menu -->
+                            <button class="icon-btn no" onclick="toggleCorrectionUI()">👎 No</button>
+                        </div>
+
+                        <!-- Correction Menu: Dropdown to teach the AI what the sound actually was -->
+                        <div id="correction_ui" class="correction-ui hidden">
+                            <p>Oops! What was it?</p>
+                            <div class="correction-controls">
+                                <select id="correction_select">
+                                    <option value="dog">🐶 Dog</option>
+                                    <option value="cat">🐱 Cat</option>
+                                    <option value="cow">🐮 Cow</option>
+                                    <option value="sheep">🐑 Sheep</option>
+                                    <option value="pig">🐷 Pig</option>
+                                    <option value="rooster">🐓 Rooster</option>
+                                    <option value="hen">🐔 Hen</option>
+                                    <option value="frog">🐸 Frog</option>
+                                    <option value="crow">🐦 Crow</option>
+                                </select>
+                                <button class="small-submit-btn" onclick="sendFeedback(false)">Teach Me</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BOTTOM PANEL: Animal Library (Text-to-Audio functionality) -->
+            <section class="card library-card">
+                <h3>📚 Animal Sound Library</h3>
+                <div class="library-search">
+                    <!-- textInput: Where the user types an animal name to play its sound -->
+                    <input type="text" id="textInput" placeholder="Type 'Dog' or 'Cat'...">
+                    <!-- playBtn: Triggers the audio file playback from the assets folder -->
+                    <button id="playBtn" class="play-round-btn">
+                        <i id="playIcon" class="fas fa-play"></i>
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MAIN LOGIC: Link to the JavaScript file where the AI processing happens -->
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,22 @@
+# Python 3.9 (verified on 3.9.25 with TensorFlow 2.10.0)
+#
+# TensorFlow 2.10 is the last release with native Windows GPU support
+# (tf.config.experimental.set_memory_growth / CUDA 11.2). On Linux or macOS any
+# recent 2.x works — the notebook only uses standard Keras layers and the
+# TFLite converter.
+
+tensorflow>=2.10,<3
+
+# --- Data science ---
+numpy<2            # TensorFlow 2.10 does not support NumPy 2.x
+pandas>=1.5
+matplotlib>=3.6
+seaborn>=0.12
+scikit-learn>=1.1
+
+# --- Audio feature extraction ---
+librosa>=0.10
+
+# --- Notebook environment ---
+jupyter>=1.0
+ipykernel>=6.15

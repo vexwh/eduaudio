@@ -1,0 +1,447 @@
+/* Define global variables here for colors throughout the site */
+:root {
+    --bg-color: #E0F7FA;
+    /* Light blue for the whole page background */
+    --card-bg: #FFFFFF;
+    /* Pure white for the "paper" cards */
+    --primary: #FF7043;
+    /* Fun orange color for the main microphone button */
+    --secondary: #42A5F5;
+    /* Bright blue for titles and the play button */
+    --accent: #66BB6A;
+    /* Grass green for success states and "Yes" buttons */
+    --text: #37474F;
+    /* Dark grey for text to make it easy to read */
+    --font-main: 'Fredoka', sans-serif;
+    /* A rounded, bubbly font perfect for kids */
+}
+
+/* --- MAIN PAGE LAYOUT --- */
+body {
+    font-family: var(--font-main);
+    /* Apply the bubbly font to everything */
+    background-color: var(--bg-color);
+    /* Set the light blue background */
+    margin: 0;
+    padding: 0;
+    /* Remove default browser borders */
+    display: flex;
+    justify-content: center;
+    /* Center the entire website horizontally */
+    min-height: 100vh;
+    /* Make sure the background covers the full screen height */
+}
+
+/* Background Decorations: These circles float behind the app to look like bubbles */
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.5;
+    z-index: -1;
+}
+
+.shape-1 {
+    width: 300px;
+    height: 300px;
+    background: #B2EBF2;
+    top: -50px;
+    left: -50px;
+}
+
+.shape-2 {
+    width: 200px;
+    height: 200px;
+    background: #FFCCBC;
+    bottom: 50px;
+    right: -20px;
+}
+
+/* --- HEADER --- */
+.main-header {
+    text-align: center;
+    margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    /* Adds space between the Title and the Ready pill */
+}
+
+/* Title style with a white shadow to make it pop */
+.main-header h1 {
+    font-size: 3.5rem;
+    color: var(--secondary);
+    text-shadow: 3px 3px 0px #fff;
+    margin: 0;
+}
+
+/* The "Ready" pill status badge */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #FFF;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    color: #555;
+    font-weight: 600;
+}
+
+/* Turns the badge green when the AI is loaded */
+.badge.ready {
+    background: var(--accent);
+    color: white;
+    animation: popIn 0.5s;
+}
+
+/* --- DASHBOARD GRID LAYOUT --- */
+/* The main wrapper that limits the width on large computer screens */
+.site-wrapper {
+    width: 100%;
+    max-width: 1100px;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* The Grid: Creates two equal columns (Left for Input, Right for Analysis) */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 30px;
+    align-items: stretch;
+}
+
+/* --- PANEL CARDS --- */
+.card {
+    background: var(--card-bg);
+    padding: 35px;
+    border-radius: 40px;
+    /* Super rounded corners */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    border: 5px solid #fff;
+    /* Sticker-like white border */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Centers everything horizontally */
+    justify-content: center;
+    /* Centers everything vertically */
+    text-align: center;
+}
+
+/* --- INPUT PANEL (LEFT SIDE) --- */
+/* The dark visualizer box with green audio bars */
+.viz-wrapper {
+    background: #263238;
+    border-radius: 25px;
+    padding: 15px;
+    margin-bottom: 25px;
+    border: 4px solid #ECEFF1;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+canvas {
+    width: 100%;
+    height: 100px;
+    border-radius: 15px;
+    display: block;
+}
+
+/* Main Microphone Button */
+.big-btn {
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-main);
+    font-size: 1.4rem;
+    padding: 15px 40px;
+    border-radius: 50px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.mic-btn {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 6px 0 #D84315;
+}
+
+/* 3D effect shadow */
+.mic-btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #D84315;
+}
+
+/* Button "push down" effect */
+.mic-btn.recording {
+    background: #FF3D00;
+    animation: wobble 1s infinite;
+}
+
+/* Shakes while recording */
+
+/* File Upload Button */
+.action-btn {
+    background: #FFF;
+    border: 2px solid #EEE;
+    padding: 10px 30px;
+    border-radius: 25px;
+    color: #777;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* The audio player bar (hidden until file is chosen) */
+#player {
+    width: 100%;
+    margin-top: 25px;
+    border-radius: 30px;
+    display: none;
+}
+
+/* --- RESULTS PANEL --- */
+/* Centers the prediction result text and emoji */
+.reveal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* The big animal name text */
+.animal-reveal {
+    font-size: 4rem;
+    color: var(--text);
+    margin: 10px 0;
+    font-weight: bold;
+    text-transform: uppercase;
+    animation: bounceIn 0.8s;
+}
+
+/* The certainty bar background */
+.progress-bar {
+    width: 80%;
+    height: 15px;
+    background: #EEE;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+/* The green fill inside the certainty bar */
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.5s ease-out;
+}
+
+/* The grey "Waiting" icon and text */
+.placeholder-msg {
+    color: #CFD8DC;
+    padding: 40px 0;
+}
+
+.placeholder-msg i {
+    font-size: 5rem;
+    margin-bottom: 15px;
+}
+
+/* --- SIMULATE FEEDBACK SECTION (YES/NO BUTTONS) --- */
+/* Forces the Yes/No buttons to stay perfectly centered */
+.feedback-box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.buttons-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+/* Style for Yes and No buttons with fixed width so they don't move */
+.icon-btn {
+    border: none;
+    padding: 10px 25px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-family: var(--font-main);
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: 0.2s;
+    min-width: 120px;
+}
+
+.yes {
+    background: #66BB6A;
+    color: white;
+}
+
+/* Green Yes */
+.no {
+    background: #EF5350;
+    color: white;
+}
+
+/* Red No */
+
+/* --- CORRECTION UI (DROP-DOWN MENU) --- */
+.correction-ui {
+    margin-top: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    align-items: center;
+}
+
+/* Lines up the dropdown and the "Teach Me" button in one row */
+.correction-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+/* The Animal selection dropdown */
+#correction_select {
+    padding: 12px 15px;
+    border-radius: 15px;
+    border: 2px solid #EEE;
+    font-family: var(--font-main);
+    font-size: 1rem;
+    background: #F9F9F9;
+    outline: none;
+}
+
+/* The small "Teach Me" button */
+.small-submit-btn {
+    background: var(--secondary);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-family: var(--font-main);
+    font-weight: bold;
+    box-shadow: 0 4px 0 #1976D2;
+}
+
+.small-submit-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1976D2;
+}
+
+/* --- LIBRARY PANEL --- */
+/* Makes the library card span across both columns */
+.library-card {
+    grid-column: 1 / span 2;
+}
+
+/* The search bar container */
+.library-search {
+    background: #F5F7F8;
+    padding: 10px;
+    border-radius: 60px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 80%;
+    margin: 0 auto;
+}
+
+/* The text input for searching animals */
+#textInput {
+    flex-grow: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 25px;
+    font-size: 1.3rem;
+    outline: none;
+    font-family: var(--font-main);
+}
+
+/* The round blue play button */
+.play-round-btn {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    border: none;
+    background: var(--secondary);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #1976D2;
+}
+
+/* --- UTILITIES --- */
+.hidden {
+    display: none !important;
+}
+
+/* Used to hide elements when they are not needed */
+.divider {
+    font-weight: bold;
+    color: #DDD;
+    margin: 15px 0;
+    font-size: 0.8rem;
+}
+
+/* --- ANIMATIONS --- */
+/* Makes the mic button shake while recording */
+@keyframes wobble {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-2deg);
+    }
+
+    75% {
+        transform: rotate(2deg);
+    }
+}
+
+/* Makes elements pop into view smoothly */
+@keyframes popIn {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Special bouncy animation for the animal reveal */
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
