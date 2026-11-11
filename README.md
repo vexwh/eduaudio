@@ -7,7 +7,7 @@ The model is trained in Python (Keras) and exported to TensorFlow Lite, but the 
 runs **entirely in the browser**: no server, no upload, no microphone audio ever leaves the
 machine.
 
-Coursework for the **Speech Recognition (AISPR)** module.
+Coursework for the **Speech Recognition (CAA1C15)** module.
 
 ![Python 3.9](https://img.shields.io/badge/Python-3.9-3776AB?logo=python&logoColor=white)
 ![TensorFlow 2.10](https://img.shields.io/badge/TensorFlow-2.10-FF6F00?logo=tensorflow&logoColor=white)
